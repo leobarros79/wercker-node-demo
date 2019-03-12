@@ -92,8 +92,8 @@ deploy-to-kubernetes:
 
     - kubectl:
         name: create deployment
-        server: $KUBERNETES_MASTER
-        token: $KUBERNETES_TOKEN
+        server: $OKE_MASTER
+        token: $OKE_TOKEN
         insecure-skip-tls-verify: true
         command: create -f $WERCKER_ROOT/kubernetes-deployment.yml --namespace=$WERCKER_APPLICATION_OWNER_NAME
         
@@ -103,7 +103,7 @@ deploy-to-kubernetes:
 
     - kubectl:
         name: create Ingress configuration
-        server: $KUBERNETES_MASTER
-        token: $KUBERNETES_TOKEN
+        server: $OKE_MASTER
+        token: $OKE_TOKEN
         insecure-skip-tls-verify: true
         command: create -f $WERCKER_ROOT/ingress.yml --namespace=$WERCKER_APPLICATION_OWNER_NAME
