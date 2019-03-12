@@ -57,7 +57,7 @@ deploy-to-kubernetes:
         server: $OKE_MASTER
         token: $OKE_TOKEN
         insecure-skip-tls-verify: true
-        command: create secret docker-registry $OKE_IMAGESECRET --docker-server=iad.ocir.io --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL --namespace=$WERCKER_APPLICATION_OWNER_NAME
+        command: create secret docker-registry $OKE_IMAGESECRET --docker-server=iad.ocir.io --docker-username='$DOCKER_USERNAME' --docker-password='$DOCKER_PASSWORD' --docker-email='$DOCKER_EMAIL' --namespace=$WERCKER_APPLICATION_OWNER_NAME
 
     - kubectl:
         name: create TLS secret
