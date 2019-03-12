@@ -34,16 +34,16 @@ deploy-to-kubernetes:
           mkdir $WERCKER_OUTPUT_DIR/kubernetes
           mv kubernetes_*.yml $WERCKER_OUTPUT_DIR/kubernetes
 
-    - kubectl:
-        name: delete namespace
-        server: $OKE_MASTER
-        token: $OKE_TOKEN
-        insecure-skip-tls-verify: true
-        command: delete namespace $WERCKER_APPLICATION_OWNER_NAME --ignore-not-found=true
+#    - kubectl:
+#        name: delete namespace
+#        server: $OKE_MASTER
+#        token: $OKE_TOKEN
+#        insecure-skip-tls-verify: true
+#        command: delete namespace $WERCKER_APPLICATION_OWNER_NAME --ignore-not-found=true
         
-    - script:
-        name: wait to delete namespace
-        code: sleep 30
+#    - script:
+#        name: wait to delete namespace
+#        code: sleep 30
         
     - kubectl:
         name: create namespace    
