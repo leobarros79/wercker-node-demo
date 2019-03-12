@@ -29,10 +29,6 @@ deploy-to-kubernetes:
     - bash-template
     
     - script:
-        name: "Visualise Kubernetes config"
-        code: cat kubernetes-deployment.yml
-        
-    - script:
         name: Prepare Kubernetes files
         code: |
           mkdir $WERCKER_OUTPUT_DIR/kubernetes
