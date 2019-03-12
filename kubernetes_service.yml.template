@@ -10,6 +10,8 @@ metadata:
     app: nodesample
     commit: ${WERCKER_GIT_COMMIT}
 spec:
+  tls:
+  - secretName: tls-secret
   ports:
   - port: 80
     targetPort: 3000
