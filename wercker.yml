@@ -65,8 +65,7 @@ deploy-to-kubernetes:
         token: $OKE_TOKEN
         insecure-skip-tls-verify: true
         command: create secret tls tls-secret --key $WERCKER_ROOT/tls.key --cert $WERCKER_ROOT/tls.crt --namespace=$WERCKER_APPLICATION_OWNER_NAME
-        
-        
+             
     - kubectl:
         name: deploy to kubernetes
         server: $OKE_MASTER
