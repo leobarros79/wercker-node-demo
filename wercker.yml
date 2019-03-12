@@ -29,10 +29,9 @@ deploy-to-kubernetes:
     - bash-template
     
     - script:
-        name: Prepare Kubernetes files
-        code: |
-          mkdir $WERCKER_OUTPUT_DIR/kubernetes
-          mv kubernetes_*.yml $WERCKER_OUTPUT_DIR/kubernetes
+        name: "Visualise Kubernetes config"
+        code: cat kubernetes-deployment.yml
+
 
     - kubectl:
         name: delete namespace
