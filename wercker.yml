@@ -34,16 +34,16 @@ deploy-to-kubernetes:
           mkdir $WERCKER_OUTPUT_DIR/kubernetes
           mv kubernetes_*.yml $WERCKER_OUTPUT_DIR/kubernetes
 
-#    - kubectl:
-#        name: delete namespace
-#        server: $OKE_MASTER
-#        token: $OKE_TOKEN
-#        insecure-skip-tls-verify: true
-#        command: delete namespace $WERCKER_APPLICATION_OWNER_NAME --ignore-not-found=true
+    - kubectl:
+        name: delete namespace
+        server: $OKE_MASTER
+        token: $OKE_TOKEN
+        insecure-skip-tls-verify: true
+        command: delete namespace $WERCKER_APPLICATION_OWNER_NAME --ignore-not-found=true
         
-#    - script:
-#        name: wait to delete namespace
-#        code: sleep 30
+    - script:
+        name: wait to delete namespace
+        code: sleep 30
         
     - kubectl:
         name: create namespace    
@@ -66,27 +66,44 @@ deploy-to-kubernetes:
         insecure-skip-tls-verify: true
         command: create secret tls tls-secret --key $WERCKER_ROOT/tls.key --cert $WERCKER_ROOT/tls.crt --namespace=$WERCKER_APPLICATION_OWNER_NAME
              
-    - kubectl:
-        name: deploy to kubernetes
-        server: $OKE_MASTER
-        token: $OKE_TOKEN
-        insecure-skip-tls-verify: true
-        command: apply -f $WERCKER_OUTPUT_DIR/kubernetes/ --namespace=$WERCKER_APPLICATION_OWNER_NAME
+#    - kubectl:
+#        name: deploy to kubernetes
+#        server: $OKE_MASTER
+#        token: $OKE_TOKEN
+#        insecure-skip-tls-verify: true
+#        command: apply -f $WERCKER_OUTPUT_DIR/kubernetes/ --namespace=$WERCKER_APPLICATION_OWNER_NAME
 
     # Tell Kubernetes that we're going to wait 60 seconds for the deploy to be successful
-    - kubectl:
-        name: set deployment timeout
-        server: $OKE_MASTER
-        token: $OKE_TOKEN
-        insecure-skip-tls-verify: true
-        command: patch deployment/nodesample -p '{"spec":{"progressDeadlineSeconds":60}}' --namespace=$WERCKER_APPLICATION_OWNER_NAME
+#    - kubectl:
+#        name: set deployment timeout
+#        server: $OKE_MASTER
+#        token: $OKE_TOKEN
+#        insecure-skip-tls-verify: true
+#        command: patch deployment/nodesample -p '{"spec":{"progressDeadlineSeconds":60}}' --namespace=$WERCKER_APPLICATION_OWNER_NAME
 
     # Watch the Kubernetes deployment. Once the pods are considered healthy the step will exit 0
     # If they aren't healthy within 60 seconds, it will exit with a non 0 exit code, and cause the run to fail.
+#    - kubectl:
+#        name: check deployment status
+#        server: $OKE_MASTER
+#        token: $OKE_TOKEN
+#        insecure-skip-tls-verify: true
+#        command: rollout status deployment/nodesample --namespace=$WERCKER_APPLICATION_OWNER_NAME
+
     - kubectl:
-        name: check deployment status
-        server: $OKE_MASTER
-        token: $OKE_TOKEN
+        name: create deployment
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
         insecure-skip-tls-verify: true
-        command: rollout status deployment/nodesample --namespace=$WERCKER_APPLICATION_OWNER_NAME
+        command: create -f $WERCKER_ROOT/kubernetes-deployment.yml --namespace=$WERCKER_APPLICATION_OWNER_NAME
         
+    - script:
+        name: "Visualise Ingress config"
+        code: cat ingress.yml
+
+    - kubectl:
+        name: create Ingress configuration
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
+        insecure-skip-tls-verify: true
+        command: create -f $WERCKER_ROOT/ingress.yml --namespace=$WERCKER_APPLICATION_OWNER_NAME
