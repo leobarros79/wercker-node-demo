@@ -27,16 +27,17 @@ deploy-to-kubernetes:
     box: node:current-slim
     steps:
     - bash-template
+    
+    - script:
+        name: "Visualise Kubernetes config"
+        code: cat kubernetes-deployment.yml
+        
     - script:
         name: Prepare Kubernetes files
         code: |
           mkdir $WERCKER_OUTPUT_DIR/kubernetes
           mv kubernetes_*.yml $WERCKER_OUTPUT_DIR/kubernetes
 
-    - script:
-        name: "Visualise Kubernetes config"
-        code: cat kubernetes-deployment.yml
-    
     - kubectl:
         name: delete namespace
         server: $OKE_MASTER
