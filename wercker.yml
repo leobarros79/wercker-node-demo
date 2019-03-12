@@ -1,16 +1,40 @@
+# This references the default nodejs container from
+# the Docker Hub: https://registry.hub.docker.com/_/node/
+# If you want Nodesource's container you would reference nodesource/node
+# Read more about containers on our dev center
+# https://devcenter.wercker.com/overview-and-core-concepts/containers/
 box: node:current-slim
+# This is the build pipeline. Pipelines are the core of wercker
+# Read more about pipelines on our dev center
+# https://devcenter.wercker.com/development/pipelines/
+
+# You can also use services such as databases. Read more on our dev center:
+# https://devcenter.wercker.com/administration/services/
+# services:
+    # - postgres
+    # https://devcenter.wercker.com/administration/services/examples/postgresql/
+
+    # - mongo
+    # https://devcenter.wercker.com/administration/services/examples/mongodb/
 build:
+  # The steps that will be executed on build
+  # Steps make up the actions in your pipeline
+  # Read more about steps on our dev center:
+  # https://devcenter.wercker.com/development/steps/
   steps:
+    # A step that executes `npm install` command
     - npm-install
+    # A step that executes `npm test` command
     - npm-test
+
+    # A custom script step, name value is used in the UI
+    # and the code value contains the command that get executed
     - script:
         name: echo nodejs information
         code: |
           echo "node version $(node -v) running"
           echo "npm version $(npm -v) running"
-    - script:
-        name: Create TLS key and cert
-        code: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=nginxsvc/O=nginxsvc"          
+           # Take our tested application revision and its dependencies, bake it in to a
     # Docker image, and push to OCIR.
     - internal/docker-push:
             entrypoint: node app.js
@@ -26,83 +50,41 @@ build:
 deploy-to-kubernetes:
     box: node:current-slim
     steps:
+
+    # https://github.com/wercker/step-bash-template
+    # This Wercker step will look for files in our repo with a .template extension.
+    # It will expand any environment variables in those files, then remove the
+    # template extension.
     - bash-template
-    
+
+    # The step above should leave us with a Kubernetes service and deployment yml files.
+    # We'll create a directory to move them to.
     - script:
-        name: "Visualise Kubernetes config"
-        code: cat kubernetes-deployment.yml
-
-
+        name: Prepare Kubernetes files
+        code: |
+          mkdir $WERCKER_OUTPUT_DIR/kubernetes
+          mv kubernetes_*.yml $WERCKER_OUTPUT_DIR/kubernetes
+    # `apply` is a good command to use here, as it'll create Kubernetes entities if they are missing.
     - kubectl:
-        name: delete namespace
+        name: deploy to kubernetes
         server: $OKE_MASTER
         token: $OKE_TOKEN
         insecure-skip-tls-verify: true
-        command: delete namespace $WERCKER_APPLICATION_OWNER_NAME --ignore-not-found=true
-        
-    - script:
-        name: wait to delete namespace
-        code: sleep 30
-        
-    - kubectl:
-        name: create namespace    
-        server: $OKE_MASTER
-        token: $OKE_TOKEN
-        insecure-skip-tls-verify: true
-        command: create namespace $WERCKER_APPLICATION_OWNER_NAME
-        
-    - kubectl:
-        name: create OCR secret
-        server: $OKE_MASTER
-        token: $OKE_TOKEN
-        insecure-skip-tls-verify: true
-        command: create secret docker-registry $OKE_IMAGESECRET --docker-server=iad.ocir.io --docker-username='$DOCKER_USERNAME' --docker-password='$DOCKER_PASSWORD' --docker-email='$DOCKER_EMAIL' --namespace=$WERCKER_APPLICATION_OWNER_NAME
-
-    - kubectl:
-        name: create TLS secret
-        server: $OKE_MASTER
-        token: $OKE_TOKEN
-        insecure-skip-tls-verify: true
-        command: create secret tls tls-secret --key $WERCKER_ROOT/tls.key --cert $WERCKER_ROOT/tls.crt --namespace=$WERCKER_APPLICATION_OWNER_NAME
-             
-#    - kubectl:
-#        name: deploy to kubernetes
-#        server: $OKE_MASTER
-#        token: $OKE_TOKEN
-#        insecure-skip-tls-verify: true
-#        command: apply -f $WERCKER_OUTPUT_DIR/kubernetes/ --namespace=$WERCKER_APPLICATION_OWNER_NAME
+        command: apply -f $WERCKER_OUTPUT_DIR/kubernetes/
 
     # Tell Kubernetes that we're going to wait 60 seconds for the deploy to be successful
-#    - kubectl:
-#        name: set deployment timeout
-#        server: $OKE_MASTER
-#        token: $OKE_TOKEN
-#        insecure-skip-tls-verify: true
-#        command: patch deployment/nodesample -p '{"spec":{"progressDeadlineSeconds":60}}' --namespace=$WERCKER_APPLICATION_OWNER_NAME
+    - kubectl:
+        name: set deployment timeout
+        server: $OKE_MASTER
+        token: $OKE_TOKEN
+        insecure-skip-tls-verify: true
+        command: patch deployment/nodesample -p '{"spec":{"progressDeadlineSeconds":60}}'
 
     # Watch the Kubernetes deployment. Once the pods are considered healthy the step will exit 0
     # If they aren't healthy within 60 seconds, it will exit with a non 0 exit code, and cause the run to fail.
-#    - kubectl:
-#        name: check deployment status
-#        server: $OKE_MASTER
-#        token: $OKE_TOKEN
-#        insecure-skip-tls-verify: true
-#        command: rollout status deployment/nodesample --namespace=$WERCKER_APPLICATION_OWNER_NAME
-
     - kubectl:
-        name: create deployment
+        name: check deployment status
         server: $OKE_MASTER
         token: $OKE_TOKEN
         insecure-skip-tls-verify: true
-        command: create -f $WERCKER_ROOT/kubernetes-deployment.yml --namespace=$WERCKER_APPLICATION_OWNER_NAME
-        
-    - script:
-        name: "Visualise Ingress config"
-        code: cat ingress.yml
-
-    - kubectl:
-        name: create Ingress configuration
-        server: $OKE_MASTER
-        token: $OKE_TOKEN
-        insecure-skip-tls-verify: true
-        command: create -f $WERCKER_ROOT/ingress.yml --namespace=$WERCKER_APPLICATION_OWNER_NAME
+        command: rollout status deployment/nodesample
